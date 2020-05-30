@@ -4,8 +4,11 @@
 #
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+import json
+import os
 
 from scrapy import signals
+from w3lib.http import basic_auth_header
 
 
 class GithubCrawlerSpiderMiddleware(object):
@@ -101,3 +104,28 @@ class GithubCrawlerDownloaderMiddleware(object):
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+
+class HttpAuthMiddleware(object):
+    """Set Basic HTTP Authorization header
+    (http_user and http_pass spider class attributes)"""
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        o = cls()
+        crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
+        return o
+
+    def spider_opened(self, spider):
+        if os.path.exists('credentials.json'):
+            with open('credentials.json') as f:
+                credentials = json.loads(f.read())
+                usr = getattr(spider, 'http_user', credentials.get('username'))
+                pwd = getattr(spider, 'http_pass', credentials.get('password'))
+                if usr or pwd:
+                    self.auth = basic_auth_header(usr, pwd)
+
+    def process_request(self, request, spider):
+        auth = getattr(self, 'auth', None)
+        if auth and b'Authorization' not in request.headers:
+            request.headers[b'Authorization'] = auth

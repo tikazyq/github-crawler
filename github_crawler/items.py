@@ -8,7 +8,15 @@
 import scrapy
 
 
-class GithubCrawlerItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+class RepoItem(scrapy.Item):
+    id = scrapy.Field()
+    name = scrapy.Field()
+    full_name = scrapy.Field()
+    html_url = scrapy.Field()
+    description = scrapy.Field()
+    git_url = scrapy.Field()
+    ssh_url = scrapy.Field()
+    created_at = scrapy.Field()
+    updated_at = scrapy.Field()
+    pushed_at = scrapy.Field()
+
