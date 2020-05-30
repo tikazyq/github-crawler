@@ -16,7 +16,10 @@ class RepoItem(scrapy.Item):
     description = scrapy.Field()
     git_url = scrapy.Field()
     ssh_url = scrapy.Field()
+    stars = scrapy.Field()
+    forks = scrapy.Field()
+    watchers = scrapy.Field()
+    language = scrapy.Field()
     created_at = scrapy.Field()
     updated_at = scrapy.Field()
     pushed_at = scrapy.Field()
-

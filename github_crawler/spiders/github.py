@@ -14,12 +14,21 @@ class GithubSpider(scrapy.Spider):
 
     def __init__(self, keyword='crawler', *args, **kwargs):
         super(GithubSpider, self).__init__(*args, **kwargs)
-        self.start_urls = [f'https://api.github.com/search/repositories?q={keyword}']
+        self.keyword = keyword
+        self.langs = ['python', 'javascript']
+        self.sorts = ['updated', 'best-match']
 
-    @staticmethod
-    def get_next_link_url(response):
+    def start_requests(self):
+        for sort in self.sorts:
+            url = f'https://api.github.com/search/repositories?q={self.keyword}&sort={sort}'
+            for lang in self.langs:
+                url = f'https://api.github.com/search/repositories?q={self.keyword}+language:{lang}&sort={sort}'
+                yield scrapy.Request(url=url, callback=self.parse)
+
+    def get_next_link_url(self, response):
         link = response.headers.get('Link').decode('utf-8')
-        m = re.search('<(.*)>; rel="next"', link)
+        m = re.search(fr'<(https://api\.github\.com/search/repositories\?.+)>; rel="next"',
+                      link)
         if m is not None:
             return m.group(1)
         return None
@@ -35,10 +44,15 @@ class GithubSpider(scrapy.Spider):
                 description=d.get('description'),
                 git_url=d.get('git_url'),
                 ssh_url=d.get('ssh_url'),
+                stars=d.get('stargazers_count'),
+                forks=d.get('forks'),
+                watchers=d.get('watchers_count'),
+                language=d.get('language'),
                 created_at=d.get('created_at'),
                 updated_at=d.get('updated_at'),
                 pushed_at=d.get('pushed_at'),
             )
 
         next_url = self.get_next_link_url(response)
-        yield scrapy.Request(url=next_url, callback=self.parse)
+        if next_url is not None:
+            yield scrapy.Request(url=next_url, callback=self.parse)
